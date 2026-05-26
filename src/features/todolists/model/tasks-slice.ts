@@ -2,9 +2,10 @@ import { nanoid } from "@reduxjs/toolkit"
 import { createTodolistTC, deleteTodolistTC } from "./todolists-slice"
 import { createAppSlice } from "@/common/utils"
 import { tasksApi } from "@/features/todolists/api/tasksApi.ts"
-import { DomainTask } from "@/features/todolists/api/tasksApi.types.ts"
+import { DomainTask, type UpdateTaskModel } from "@/features/todolists/api/tasksApi.types.ts"
 import { TaskStatus } from "@/common/enums"
 import { aw } from "vitest/dist/chunks/reporters.D7Jzd9GS"
+import { RootState } from "@/app/store.ts"
 
 export const tasksSlice = createAppSlice({
   name: "tasks",
@@ -56,11 +57,50 @@ export const tasksSlice = createAppSlice({
       },
       {
         fulfilled: (state, action) => {
-          const {todolistId, taskId}=action.payload
+          const { todolistId, taskId } = action.payload
           state[todolistId] = state[todolistId].filter((task) => {
             return task.id !== taskId
           })
         },
+      },
+    ),
+    changeTaskStatusTC: create.asyncThunk(
+      async (payload: { todolistId: string; taskId: string; status: TaskStatus }, thunkAPI) => {
+        const { todolistId, taskId, status } = payload
+        const allTodolistsTasks = (thunkAPI.getState() as RootState).tasks[todolistId]
+        const task = allTodolistsTasks.find((task) => task.id === taskId)
+        if (!task) {
+          return thunkAPI.rejectWithValue(null)
+        }
+        const { description, title, priority, startDate, deadline } = task
+        const model: UpdateTaskModel = {
+          description,
+          title,
+          priority,
+          startDate,
+          deadline,
+          status,
+        }
+        try {
+
+          const res = await tasksApi.updateTask({ todolistId, taskId: taskId, model })
+          return { task: res.data.data.item }
+
+        } catch (error) {
+          return thunkAPI.rejectWithValue(null)
+        }
+      },
+      {
+        fulfilled: (state, action) => {
+          debugger
+          state[action.payload.task.todoListId] = state[action.payload.task.todoListId].map((task) => {
+            return task.id === action.payload.task.id ? { ...task, status: action.payload.task.status } : task
+          })
+          return state
+        },
+        rejected: (state, action) => {
+          alert('!!!!!!!!!!!!')
+        }
       },
     ),
     deleteTaskAC: create.reducer<{ todolistId: string; taskId: string }>((state, action) => {
@@ -137,7 +177,7 @@ export const tasksSlice = createAppSlice({
 })*/
 
 export const { selectTasks } = tasksSlice.selectors
-export const { fetchTasksTC, deleteTaskTC, createTaskTC, changeTaskStatusAC, changeTaskTitleAC } = tasksSlice.actions
+export const { fetchTasksTC, deleteTaskTC, createTaskTC, changeTaskStatusTC, changeTaskTitleAC } = tasksSlice.actions
 export const tasksReducer = tasksSlice.reducer
 
 export type TasksState = Record<string, DomainTask[]>
