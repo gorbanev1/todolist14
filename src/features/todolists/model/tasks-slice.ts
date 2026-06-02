@@ -6,6 +6,7 @@ import { DomainTask, type UpdateTaskModel } from "@/features/todolists/api/tasks
 import { TaskStatus } from "@/common/enums"
 import { aw } from "vitest/dist/chunks/reporters.D7Jzd9GS"
 import { RootState } from "@/app/store.ts"
+import { todolistsApi } from "@/features/todolists/api/todolistsApi.ts"
 
 export const tasksSlice = createAppSlice({
   name: "tasks",
@@ -82,10 +83,8 @@ export const tasksSlice = createAppSlice({
           status,
         }
         try {
-
           const res = await tasksApi.updateTask({ todolistId, taskId: taskId, model })
           return { task: res.data.data.item }
-
         } catch (error) {
           return thunkAPI.rejectWithValue(null)
         }
@@ -99,10 +98,40 @@ export const tasksSlice = createAppSlice({
           return state
         },
         rejected: (state, action) => {
-          alert('!!!!!!!!!!!!')
-        }
+          alert("!!!!!!!!!!!!")
+        },
       },
     ),
+    changeTaskTitleTC: create.asyncThunk(
+      async (payload: { todolistId: string; taskId: string; title: string }, thunkApi) => {
+        const { todolistId, taskId, title } = payload
+        const allTodolistsTasks = (thunkApi.getState() as RootState).tasks[todolistId]
+        const task = allTodolistsTasks.find((t) => t.id === taskId)
+        if (!task) {
+          return thunkApi.rejectWithValue(null)
+        }
+        const { description, priority, startDate, deadline, status } = task
+        const model: UpdateTaskModel = {
+          description,
+          title,
+          priority,
+          startDate,
+          deadline,
+          status,
+        }
+        const res = await tasksApi.updateTask({ todolistId, taskId, model })
+        return res.data.data.item
+      },
+      {
+        fulfilled: (state, action) => {
+          const index = state[action.payload.todoListId].findIndex((t) => t.id === action.payload.id)
+          if (index !== -1) {
+            state[action.payload.todoListId][index] = action.payload
+          }
+        },
+      },
+    ),
+
     deleteTaskAC: create.reducer<{ todolistId: string; taskId: string }>((state, action) => {
       const tasks = state[action.payload.todolistId]
       const index = tasks.findIndex((task) => task.id === action.payload.taskId)
