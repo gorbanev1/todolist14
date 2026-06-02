@@ -65,7 +65,7 @@ export const tasksSlice = createAppSlice({
         },
       },
     ),
-    changeTaskStatusTC: create.asyncThunk(
+/*    changeTaskStatusTC: create.asyncThunk(
       async (payload: { todolistId: string; taskId: string; status: TaskStatus }, thunkAPI) => {
         const { todolistId, taskId, status } = payload
         const allTodolistsTasks = (thunkAPI.getState() as RootState).tasks[todolistId]
@@ -91,7 +91,6 @@ export const tasksSlice = createAppSlice({
       },
       {
         fulfilled: (state, action) => {
-          debugger
           state[action.payload.task.todoListId] = state[action.payload.task.todoListId].map((task) => {
             return task.id === action.payload.task.id ? { ...task, status: action.payload.task.status } : task
           })
@@ -128,6 +127,40 @@ export const tasksSlice = createAppSlice({
           if (index !== -1) {
             state[action.payload.todoListId][index] = action.payload
           }
+        },
+      },
+    ),*/
+    updateTaskTC: create.asyncThunk(
+      async (
+        payload: { todolistId: string; taskId: string; domainModel: Partial<UpdateTaskModel> },
+        {  getState, rejectWithValue },
+      ) => {
+        const { todolistId, taskId, domainModel } = payload
+        const allTodolistsTasks = (getState() as RootState).tasks[todolistId]
+        const task = allTodolistsTasks.find((t) => t.id === taskId)
+        if (!task) {
+          return rejectWithValue(null)
+        }
+        const { description, priority, startDate, deadline, status,title } = task
+        const oldModel: UpdateTaskModel = {
+          description,
+          title,
+          priority,
+          startDate,
+          deadline,
+          status,
+        }
+        const model={...oldModel,...domainModel}
+        const res = await tasksApi.updateTask({todolistId, taskId, model})
+        return res.data.data.item
+      },
+      {
+        fulfilled: (state, action) => {
+          const index=state[action.payload.todoListId].findIndex(t=>t.id===action.payload.id)
+          if (index !== -1) {
+            state[action.payload.todoListId][index] = action.payload
+          }
+
         },
       },
     ),
@@ -206,7 +239,7 @@ export const tasksSlice = createAppSlice({
 })*/
 
 export const { selectTasks } = tasksSlice.selectors
-export const { fetchTasksTC, deleteTaskTC, createTaskTC, changeTaskStatusTC, changeTaskTitleAC } = tasksSlice.actions
+export const { fetchTasksTC, deleteTaskTC, createTaskTC, updateTaskTC } = tasksSlice.actions
 export const tasksReducer = tasksSlice.reducer
 
 export type TasksState = Record<string, DomainTask[]>
