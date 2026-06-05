@@ -33,9 +33,12 @@ export const todolistsSlice = createAppSlice({
     createTodolistTC: create.asyncThunk(
       async (title: string, thunkAPI) => {
         try {
+          thunkAPI.dispatch(setAppStatusAC({ status: "loading" }))
           const res = await todolistsApi.createTodolist(title)
+          thunkAPI.dispatch(setAppStatusAC({ status: "succeeded" }))
           return { todolist: res.data.data.item }
         } catch (error) {
+          thunkAPI.dispatch(setAppStatusAC({ status: "failed" }))
           return thunkAPI.rejectWithValue(null)
         }
       },
@@ -48,9 +51,12 @@ export const todolistsSlice = createAppSlice({
     deleteTodolistTC: create.asyncThunk(
       async (todolistId: string, thunkAPI) => {
         try {
+          thunkAPI.dispatch(setAppStatusAC({ status: "loading" }))
           await todolistsApi.deleteTodolist(todolistId)
+          thunkAPI.dispatch(setAppStatusAC({ status: "succeeded" }))
           return todolistId
         } catch (error) {
+          thunkAPI.dispatch(setAppStatusAC({ status: "failed" }))
           return thunkAPI.rejectWithValue(null)
         }
       },
@@ -66,9 +72,12 @@ export const todolistsSlice = createAppSlice({
     changeTodolistTitleTC: create.asyncThunk(
       async (payload: { id: string; title: string }, thunkAPI) => {
         try {
+          thunkAPI.dispatch(setAppStatusAC({ status: "loading" }))
           await todolistsApi.changeTodolistTitle({ id: payload.id, title: payload.title })
+          thunkAPI.dispatch(setAppStatusAC({ status: "succeeded" }))
           return payload
         } catch (error) {
+          thunkAPI.dispatch(setAppStatusAC({ status: "failed" }))
           return thunkAPI.rejectWithValue(null)
         }
       },
@@ -194,7 +203,6 @@ export const todolistsSlice = createAppSlice({
 )*/
 
 export const { selectTodolists } = todolistsSlice.selectors
-export const { changeTodolistFilterAC } = todolistsSlice.actions
 export const todolistsReducer = todolistsSlice.reducer
 
 export type DomainTodolist = Todolist & {
@@ -202,4 +210,4 @@ export type DomainTodolist = Todolist & {
 }
 
 export type FilterValues = "all" | "active" | "completed"
-export const { fetchTodolistsTC, createTodolistTC } = todolistsSlice.actions
+export const { fetchTodolistsTC, createTodolistTC,deleteTodolistTC,changeTodolistFilterAC,changeTodolistTitleTC } = todolistsSlice.actions

@@ -16,7 +16,6 @@ export const TodolistItem = ({ todolist }: Props) => {
   const createTask = (title: string) => {
     dispatch(createTaskTC({ todolistId: todolist.id, title }))
   }
-
   return (
     <div>
       <TodolistTitle todolist={todolist} />
